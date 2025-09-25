@@ -13,8 +13,13 @@ class StripeAdapter(PaymentProcessor):
         self.client = client
 
     def pay(self, amount: float) -> str:
-        # TODO:
-        raise NotImplementedError
+        # StripeAPI expects amount in cents (int), so convert EUR to cents
+        amount_cents = int(round(amount * 100))
+        result = self.client.charge(amount_cents)
+        if result.get("status") == "success":
+            return f"paid {amount:.2f} EUR via Stripe ({self.client.account_email})"
+        else:
+            raise Exception("Stripe payment failed")
 
 class PayPalAdapter(PaymentProcessor):
     """Adapt PayPalClient(make_payment total: float) -> (bool, total) to PaymentProcessor interface."""
@@ -22,8 +27,11 @@ class PayPalAdapter(PaymentProcessor):
         self.client = client
 
     def pay(self, amount: float) -> str:
-        # TODO:
-        # - Call self.client.make_payment(amount)
+        success, total = self.client.make_payment(amount)
+        if success:
+            return f"paid {total:.2f} EUR via PayPal ({self.client.merchant_email})"
+        else:
+            raise Exception("PayPal payment failed")
         # - Validate the success flag
         # - Return: "paid 12.34 EUR via PayPal (merchant@example.com)"
         raise NotImplementedError
